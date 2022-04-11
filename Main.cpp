@@ -1,11 +1,9 @@
 #include <windows.h>
 #include <iostream>
-#include <thread>
 
 using namespace std;
 
-DWORD WINAPI polynom(LPVOID lparam)
-{
+DWORD WINAPI polynom(LPVOID lparam) {
 	int* arr = (int*)lparam;
 	int deg = (int)arr[1];
 	int x = (int)arr[2];
@@ -19,30 +17,38 @@ DWORD WINAPI polynom(LPVOID lparam)
 
 	cout << "p(" << x << ") = " << result << endl;
 	arr[0] = result;
+	
 	return 0;
 }
 
 int* createData(string name, int x) {
 	int deg;
+	
 	cout << "Enter the degree of " << name << " : " << endl;
 	cin >> deg;
+	
 	int* param = new int[deg + 4];
 	param[1] = deg;
 	param[2] = x;
+	
 	cout << "Enter the coefficients of numerator: " << endl;
 	for (int i = 3; i < deg + 4; i++) {
 		cin >> param[i];
 	}
 	cout << endl;
+	
 	return param;
 }
 HANDLE runThread(int* param) {
 	HANDLE handle;
 	DWORD ID;
+	
 	handle = CreateThread(NULL, 0, polynom, (void*)param, 0, &ID);
+	
 	if (handle == NULL) {
 		cout << "The thread is not created." << endl;
 	}
+	
 	return handle;
 }
 
