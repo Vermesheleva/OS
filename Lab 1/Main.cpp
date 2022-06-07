@@ -2,31 +2,36 @@
 #include <windows.h>
 #include <fstream>
 #include <string>
+#include "Employee.cpp"
+
 #pragma warning(disable : 4996)
 
-using namespace std;
-
-struct employee {
-	int num;
-	char name[10];
-	double hours;
-};
+using std::cin;
+using std::cout;
+using std::ios;
+using std::ofstream;
+using std::endl;
+using std::string;
+using std::ifstream;
 
 void runCreatorProcess(string filename, string kolvo) {
 	string creator = "Creator " + filename + " " + kolvo;
-	wchar_t wcreator[200];
-	mbstowcs(wcreator, creator.c_str(), creator.length());
-	LPWSTR lcreator = wcreator;
+	char* commandLine = new char[creator.length() + 1];
+	strcpy(commandLine, creator.c_str());
+
 
 	STARTUPINFO si;
 	PROCESS_INFORMATION create;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
-	if (!CreateProcess(NULL, lcreator, NULL, NULL, FALSE,
+	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
 		CREATE_NEW_CONSOLE, NULL, NULL, &si, &create))
 	{
 		cout << "The Creator process is not created" << endl;
+		CloseHandle(create.hThread);
+		CloseHandle(create.hProcess);
+		delete[] commandLine;
 	}
 
 	else cout << "The Creator process is created" << endl;
@@ -35,33 +40,41 @@ void runCreatorProcess(string filename, string kolvo) {
 
 	CloseHandle(create.hThread);
 	CloseHandle(create.hProcess);
+	delete[] commandLine;
 }
 
 void readBinFile(string filename, int num) {
 	ifstream fin;
 	fin.open(filename, ios::binary);
+
 	cout << "The contents of binary file: " << endl;
+
 	for (int i = 0; i < num; i++) {
 		employee temp;
 		fin.read((char*)&temp, sizeof(struct employee));
 		cout << temp.num << " " << temp.name << " " << temp.hours << endl;
 	}
+
 	fin.close();
 }
+
 void runReporterProcess(string reportFile, string binfile, string payment, string kolvo) {
-	string reporter = "Reporter " + binfile+ " " + reportFile + " " + payment + " " + kolvo;
-	wchar_t wreporter[200];
-	mbstowcs(wreporter, reporter.c_str(), reporter.length());
-	LPWSTR lreporter = wreporter;
+	string reporter = "Reporter " + binfile + " " + reportFile + " " + payment + " " + kolvo;
+	char* commandLine = new char[reporter.length() + 1];
+	strcpy(commandLine, reporter.c_str());
+	
 	STARTUPINFO si;
 	PROCESS_INFORMATION report;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
-	if (!CreateProcess(NULL, lreporter, NULL, NULL, FALSE,
-		CREATE_NEW_CONSOLE, NULL, NULL, &si, &report))
+	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
+		NULL, NULL, NULL, &si, &report))
 	{
 		cout << "The Reporter process is not created" << endl;
+		CloseHandle(report.hThread);
+		CloseHandle(report.hProcess);
+		delete[] commandLine;
 	}
 
 	else cout << "The Reporter process is created" << endl;
@@ -70,21 +83,28 @@ void runReporterProcess(string reportFile, string binfile, string payment, strin
 
 	CloseHandle(report.hThread);
 	CloseHandle(report.hProcess);
+	delete[] commandLine;
 }
+
+
 void readReportFile(string filename) {
 	ifstream fin(filename);
 	string line;
+
 	cout << "The contents of report file: " << endl;
+
 	while (!fin.eof()) {
 		getline(fin, line);
 		cout << line << endl;
 	}
+
 	fin.close();
 }
 
 int main() {
 	string binFileName;
 	string kolvo;
+
 	cout << "Enter binary file name: " << endl;
 	cin >> binFileName;
 	cout << "Enter number of notes: " << endl;
@@ -107,7 +127,7 @@ int main() {
 	cout << endl;
 	runReporterProcess(reportFile, binFileName, payment, kolvo);
 	cout << endl;
-	
+
 	readReportFile(reportFile);
 
 	return 0;
