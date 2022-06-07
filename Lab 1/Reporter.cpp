@@ -1,17 +1,15 @@
 #include <iostream>
 #include <windows.h>
 #include <fstream>
+#include "Employee.cpp"
 
-using namespace std;
+using std::ios;
+using std::ofstream;
+using std::endl;
+using std::ifstream;
 
-struct employee {
-	int num;
-	char name[10];
-	double hours;
-};
 
 int main(int argc, char* argv[]) {
-
 	char* binFile = argv[1];
 	char* reportFile = argv[2];
 	double payment = atoi(argv[3]);
