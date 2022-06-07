@@ -1,13 +1,13 @@
 #include <iostream>
 #include <windows.h>
 #include <fstream>
-using namespace std;
+#include "Employee.cpp"
 
-struct employee {
-	int num;
-	char name[10];
-	double hours;
-};
+using ::std::cin;
+using ::std::cout;
+using ::std::ios;
+using ::std::ofstream;
+using ::std::endl;
 
 int main(int argc, char* argv[]) {
 
@@ -24,6 +24,8 @@ int main(int argc, char* argv[]) {
 		cout << "Input employee working hours" << endl;
 		cin >> temp.hours;
 		fout.write((char*)&temp, sizeof(struct employee));
+
+		system("cls");
 	}
 	fout.close();
 
