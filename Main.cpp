@@ -1,83 +1,134 @@
-#include <windows.h>
 #include <iostream>
+#include <windows.h>
+#include <fstream>
+#include <string>
+#include "Employee.cpp"
 
-using namespace std;
+#pragma warning(disable : 4996)
 
-DWORD WINAPI polynom(LPVOID lparam) {
-	int* arr = (int*)lparam;
-	int deg = (int)arr[1];
-	int x = (int)arr[2];
-	int result = 0;
-	
-	for (int i = deg; i >= 0; i--) {
-		int temp = arr[deg - i + 3] * pow(x, i);
-		Sleep(200);
-		result += temp;
+using std::cin;
+using std::cout;
+using std::ios;
+using std::ofstream;
+using std::endl;
+using std::string;
+using std::ifstream;
+
+void runCreatorProcess(string filename, string kolvo) {
+	string creator = "Creator " + filename + " " + kolvo;
+	char* commandLine = new char[creator.length() + 1];
+	strcpy(commandLine, creator.c_str());
+
+
+	STARTUPINFO si;
+	PROCESS_INFORMATION create;
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+	si.cb = sizeof(STARTUPINFO);
+
+	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
+		CREATE_NEW_CONSOLE, NULL, NULL, &si, &create))
+	{
+		cout << "The Creator process is not created" << endl;
+		CloseHandle(create.hThread);
+		CloseHandle(create.hProcess);
+		delete[] commandLine;
 	}
 
-	cout << "p(" << x << ") = " << result << endl;
-	arr[0] = result;
-	
-	return 0;
+	else cout << "The Creator process is created" << endl;
+
+	WaitForSingleObject(create.hProcess, INFINITE);
+
+	CloseHandle(create.hThread);
+	CloseHandle(create.hProcess);
+	delete[] commandLine;
 }
 
-int* createData(string name, int x) {
-	int deg;
-	
-	cout << "Enter the degree of " << name << " : " << endl;
-	cin >> deg;
-	
-	int* param = new int[deg + 4];
-	param[1] = deg;
-	param[2] = x;
-	
-	cout << "Enter the coefficients of numerator: " << endl;
-	for (int i = 3; i < deg + 4; i++) {
-		cin >> param[i];
+void readBinFile(string filename, int num) {
+	ifstream fin;
+	fin.open(filename, ios::binary);
+
+	cout << "The contents of binary file: " << endl;
+
+	for (int i = 0; i < num; i++) {
+		employee temp;
+		fin.read((char*)&temp, sizeof(struct employee));
+		cout << temp.num << " " << temp.name << " " << temp.hours << endl;
 	}
-	cout << endl;
-	
-	return param;
+
+	fin.close();
 }
-HANDLE runThread(int* param) {
-	HANDLE handle;
-	DWORD ID;
+
+void runReporterProcess(string reportFile, string binfile, string payment, string kolvo) {
+	string reporter = "Reporter " + binfile + " " + reportFile + " " + payment + " " + kolvo;
+	char* commandLine = new char[reporter.length() + 1];
+	strcpy(commandLine, reporter.c_str());
 	
-	handle = CreateThread(NULL, 0, polynom, (void*)param, 0, &ID);
-	
-	if (handle == NULL) {
-		cout << "The thread is not created." << endl;
+	STARTUPINFO si;
+	PROCESS_INFORMATION report;
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+	si.cb = sizeof(STARTUPINFO);
+
+	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
+		NULL, NULL, NULL, &si, &report))
+	{
+		cout << "The Reporter process is not created" << endl;
+		CloseHandle(report.hThread);
+		CloseHandle(report.hProcess);
+		delete[] commandLine;
 	}
-	
-	return handle;
+
+	else cout << "The Reporter process is created" << endl;
+
+	WaitForSingleObject(report.hProcess, INFINITE);
+
+	CloseHandle(report.hThread);
+	CloseHandle(report.hProcess);
+	delete[] commandLine;
+}
+
+
+void readReportFile(string filename) {
+	ifstream fin(filename);
+	string line;
+
+	cout << "The contents of report file: " << endl;
+
+	while (!fin.eof()) {
+		getline(fin, line);
+		cout << line << endl;
+	}
+
+	fin.close();
 }
 
 int main() {
-	int x;
-	double result;
+	string binFileName;
+	string kolvo;
 
-	cout << "Enter x: " << endl;
-	cin >> x;
+	cout << "Enter binary file name: " << endl;
+	cin >> binFileName;
+	cout << "Enter number of notes: " << endl;
+	cin >> kolvo;
+	cout << endl;
 
-	int* param1 = createData("numerator", x);
-	int* param2 = createData("denomerator", x);
+	runCreatorProcess(binFileName, kolvo);
+	cout << endl;
 
-	HANDLE hNumerator;
-	HANDLE hDenomerator;
+	int num = stoi(kolvo);
+	readBinFile(binFileName, num);
+	cout << endl;
 
-	hNumerator = runThread(param1);
-	hDenomerator = runThread(param2);
+	string reportFile;
+	cout << "Enter report file name " << endl;
+	cin >> reportFile;
+	string payment;
+	cout << "Enter payment " << endl;
+	cin >> payment;
+	cout << endl;
+	runReporterProcess(reportFile, binFileName, payment, kolvo);
+	cout << endl;
 
-	HANDLE* handles = new HANDLE[2];
-	handles[0] = hNumerator;
-	handles[1] = hDenomerator;
+	readReportFile(reportFile);
 
-	WaitForMultipleObjects(2, handles, TRUE, INFINITE);
-	CloseHandle(hNumerator);
-	CloseHandle(hDenomerator);
-
-	result = ((double)param1[0] / (double)param2[0]);
-	cout << "f(" << x << ") = " << result;
-	
 	return 0;
 }
