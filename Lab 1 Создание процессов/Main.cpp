@@ -14,8 +14,8 @@ using std::endl;
 using std::string;
 using std::ifstream;
 
-void runCreatorProcess(string filename, string kolvo) {
-	string creator = "Creator " + filename + " " + kolvo;
+void runCreatorProcess(string filename, int kolvo) {
+	string creator = "Creator " + filename + " " + std::to_string(kolvo);
 	char* commandLine = new char[creator.length() + 1];
 	strcpy(commandLine, creator.c_str());
 
@@ -28,13 +28,12 @@ void runCreatorProcess(string filename, string kolvo) {
 	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
 		CREATE_NEW_CONSOLE, NULL, NULL, &si, &create))
 	{
-		cout << "The Creator process is not created" << endl;
+		cout << "The Creator process is not created." << endl;
 		CloseHandle(create.hThread);
 		CloseHandle(create.hProcess);
 		delete[] commandLine;
+		exit(0);
 	}
-
-	else cout << "The Creator process is created" << endl;
 
 	WaitForSingleObject(create.hProcess, INFINITE);
 
@@ -58,8 +57,8 @@ void readBinFile(string filename, int num) {
 	fin.close();
 }
 
-void runReporterProcess(string reportFile, string binfile, string payment, string kolvo) {
-	string reporter = "Reporter " + binfile + " " + reportFile + " " + payment + " " + kolvo;
+void runReporterProcess(string reportFile, string binfile, string payment, int kolvo) {
+	string reporter = "Reporter " + binfile + " " + reportFile + " " + payment + " " + std::to_string(kolvo);
 	char* commandLine = new char[reporter.length() + 1];
 	strcpy(commandLine, reporter.c_str());
 	
@@ -71,13 +70,12 @@ void runReporterProcess(string reportFile, string binfile, string payment, strin
 	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
 		NULL, NULL, NULL, &si, &report))
 	{
-		cout << "The Reporter process is not created" << endl;
+		cout << "The Reporter process is not created." << endl;
 		CloseHandle(report.hThread);
 		CloseHandle(report.hProcess);
 		delete[] commandLine;
+		exit(0);
 	}
-
-	else cout << "The Reporter process is created" << endl;
 
 	WaitForSingleObject(report.hProcess, INFINITE);
 
@@ -103,19 +101,24 @@ void readReportFile(string filename) {
 
 int main() {
 	string binFileName;
-	string kolvo;
+	int kolvo;
 
 	cout << "Enter binary file name: " << endl;
 	cin >> binFileName;
 	cout << "Enter number of notes: " << endl;
 	cin >> kolvo;
+	
+	if (kolvo == 0) {
+		cout << "Uncorrect input." << endl;
+		exit(0);
+	}
+
 	cout << endl;
 
 	runCreatorProcess(binFileName, kolvo);
 	cout << endl;
 
-	int num = stoi(kolvo);
-	readBinFile(binFileName, num);
+	readBinFile(binFileName, kolvo);
 	cout << endl;
 
 	string reportFile;
