@@ -3,9 +3,12 @@
 
 using namespace std;
 
+const int nameLen = 10;
+const int textLen = 20;
+
 struct Message {
-	char name[100];
-	char text[100];
+	char name[nameLen];
+	char text[textLen];
 
 	Message() {
 		strcpy(name, "");

@@ -5,7 +5,7 @@
 
 #pragma warning(disable : 4996)
 
-using namespace std;
+using std::iostream;
 
 HANDLE canRead;
 HANDLE canWrite;
@@ -13,7 +13,7 @@ HANDLE mutex;
 int queueSize;
 int tail;
 
-void writeMessage(char* filename, Message* message) {
+void writeMessage(string filename, Message* message) {
 	WaitForSingleObject(canWrite, INFINITE);
 	WaitForSingleObject(mutex, INFINITE);
 
@@ -22,7 +22,7 @@ void writeMessage(char* filename, Message* message) {
 	char p[10];
 	fout.read(p, sizeof(p));
 	tail = atoi(p);
-	int pos =  sizeof(p) + sizeof(Message) * tail;
+	int pos = sizeof(p) + sizeof(Message) * tail;
 	fout.seekp(pos, ios::beg);
 	fout.write((char*)message, sizeof(Message));
 
@@ -42,8 +42,8 @@ void writeMessage(char* filename, Message* message) {
 }
 
 int main(int argc, char* argv[]) {
-	char* filename;
-	char name[10];
+	string filename;
+	char name[nameLen];
 	int key;
 
 	canRead = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, "Queue is full");
@@ -62,13 +62,19 @@ int main(int argc, char* argv[]) {
 		cin >> key;
 
 		if (key == 1) {
-			char text[20];
+			char text[textLen];
 			cout << "Enter the text of the messege: " << endl;
 			cin >> text;
 			Message* mess = new Message(name, text);
 			writeMessage(filename, mess);
+			system("cls");
 		}
-		if (key == 2) {
+		else if (key == 2) {
+			return 0;
+		}
+		else {
+			cout << "Wrong key." << endl;
+			system("pause");
 			return 0;
 		}
 	}

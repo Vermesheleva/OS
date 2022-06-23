@@ -6,20 +6,24 @@
 
 #pragma warning(disable : 4996)
 
-using namespace std;
+using std::iostream;
 
 HANDLE canRead;
 HANDLE canWrite;
 HANDLE mutex;
+HANDLE* sendersThreads;
+HANDLE* sendersProcesses;
+
 int head = 0;
 int tail = 0;
 int queueSize;
+int numOfSenders;
 
 
-void createEmptyFile(char* filename, int queueSize) {
+void createEmptyFile(string filename, int queueSize) {
 	ofstream fout(filename, ios::binary);
 
-	Message* mess = new Message("empty", "empty");
+	Message* mess = new Message(" - ", " - ");
 	for (int i = 0; i < queueSize; i++) {
 		fout.write((char*)&mess, sizeof(Message));
 	}
@@ -27,13 +31,23 @@ void createEmptyFile(char* filename, int queueSize) {
 	fout.close();
 }
 
-void readMessege(char* filename) {
+void readMessege(string filename) {
 	WaitForSingleObject(canRead, INFINITE);
-	
+
 	fstream fin(filename, ios::binary | ios::in | ios::out);
 	if (!fin.is_open()) {
-		cout << "File is not open." << endl;;
-		return;
+		cout << "File is not open." << endl;
+
+		CloseHandle(canRead);
+		CloseHandle(canWrite);
+		CloseHandle(mutex);
+
+		for (int i = numOfSenders - 1; i >= 0; i--) {
+			CloseHandle(sendersThreads[i]);
+			CloseHandle(sendersProcesses[i]);
+		}
+
+		exit(0);
 	}
 
 	Message* mess = new Message();
@@ -45,7 +59,7 @@ void readMessege(char* filename) {
 	cout << mess->name << " " << mess->text << endl;
 
 	fin.seekp(pos, ios::beg);
-	mess = new Message("deleted", "deleted");
+	mess = new Message(" - ", " - ");
 	fin.write((char*)mess, sizeof(Message));
 
 	head++;
@@ -58,30 +72,33 @@ void readMessege(char* filename) {
 	ReleaseSemaphore(canWrite, 1, NULL);
 }
 
-void runSenderProcess(char* filename) {
-	char data[50] = "Sender ";
-	strcat(data, filename);
-	strcat(data, " ");
-	strcat(data, to_string(queueSize).c_str());
-	strcat(data, " ");
+void runSenderProcess(string filename, int ind) {
+	string sender = "Sender " + filename + " " + to_string(queueSize);
+	char* commandLine = new char[sender.length() + 1];
+	strcpy(commandLine, sender.c_str());
 
 	STARTUPINFO si;
 	PROCESS_INFORMATION send;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
-	if (!CreateProcess(NULL, data, NULL, NULL, FALSE,
-		CREATE_NEW_CONSOLE, NULL, NULL, &si, &send))
-	{
-		cout << "The sender process is not created. Error code: " << GetLastError() << endl;
-	}
+	if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE,
+		CREATE_NEW_CONSOLE, NULL, NULL, &si, &send)){
 
-	else cout << "The Sender process is created" << endl;
+		cout << "The sender process is not created. Error code: " << GetLastError() << endl;
+
+		for (int i = ind; i >= 0; i--) {
+			CloseHandle(sendersThreads[i]);
+			CloseHandle(sendersProcesses[i]);
+		}
+		exit(0);
+	}
+	sendersThreads[ind] = send.hThread;
+	sendersProcesses[ind] = send.hProcess;
 }
 
 int main() {
-	char filename[200];
-	int numOfSenders;
+	string filename;
 	int key;
 
 	cout << "Enter the name of binary file: " << endl;
@@ -90,17 +107,20 @@ int main() {
 	cin >> queueSize;
 	cout << "Enter the number of senders: " << endl;
 	cin >> numOfSenders;
-	
+
 	canRead = CreateSemaphore(NULL, 0, queueSize, "Queue is full");
 	canWrite = CreateSemaphore(NULL, queueSize, queueSize, "Queue is empty");
 	mutex = CreateMutex(NULL, FALSE, "Mutex");
 
 	createEmptyFile(filename, queueSize);
+	sendersThreads = new HANDLE[numOfSenders];
+	sendersProcesses = new HANDLE[numOfSenders];
 
 	for (int i = 0; i < numOfSenders; i++) {
-		runSenderProcess(filename);
+		runSenderProcess(filename, i);
 	}
-	
+
+	system("cls");
 
 	while (true) {
 		cout << "Enter the command key: 1 for read, 2 for exit" << endl;
@@ -108,12 +128,21 @@ int main() {
 		if (key == 1) {
 			readMessege(filename);
 		}
-		if (key == 2) {
-			return 0;
+		else if (key == 2) {
+			break;
+		}
+		else {
+			cout << "Wrong key." << endl;
+			break;		
 		}
 	}
 
 	CloseHandle(canRead);
 	CloseHandle(canWrite);
 	CloseHandle(mutex);
+
+	for (int i = numOfSenders - 1; i >= 0; i--) {
+		CloseHandle(sendersThreads[i]);
+		CloseHandle(sendersProcesses[i]);
+	}
 }
