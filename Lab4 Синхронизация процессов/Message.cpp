@@ -1,8 +1,6 @@
 #include <iostream>
 #pragma warning(disable : 4996)
 
-using namespace std;
-
 const int nameLen = 10;
 const int textLen = 20;
 
