@@ -5,7 +5,12 @@
 
 #pragma warning(disable : 4996)
 
-using std::iostream;
+using std::fstream;
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ios;
+using std::string;
 
 HANDLE canRead;
 HANDLE canWrite;
