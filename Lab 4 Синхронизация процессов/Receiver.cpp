@@ -7,6 +7,14 @@
 #pragma warning(disable : 4996)
 
 using std::iostream;
+using std::string;
+using std::cout;
+using std::cin;
+using std::endl;
+using std::ios;
+using std::ofstream;
+using std::fstream;
+using std::to_string;
 
 HANDLE canRead;
 HANDLE canWrite;
