@@ -1,31 +1,33 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
+#include <string>
 #include "Order.cpp"
+#include "Keys.h"
 
 #pragma warning(disable : 4996)
 
-using namespace std;
-
-char READ = 'r';
-char MODIFY = 'm';
-char ORDER_NOT_FOUND = 'n';
-char ORDER_FOUND = 'f';
-char EXIT = 'e';
-char END_OPERATION = 'd';
-char END_MODIFY = 'n';
-char filename[20];
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ofstream;
+using std::string;
+using std::to_string;
+using std::ifstream;
+using std::ios;
 
 volatile int readerCount = 0;
 CRITICAL_SECTION cs;
 HANDLE semaphore;
 int numOfOrders;
+string filename;
 
 void createBinaryFile() {
 	ofstream fout(filename, ios::binary);
 
 	cout << "Enter the number of orders: " << endl;;
 	cin >> numOfOrders;
+	system("cls");
 
 	for (int i = 0; i < numOfOrders; i++) {
 		Order order;
@@ -35,7 +37,7 @@ void createBinaryFile() {
 		cout << "Enter order name: " << endl;
 		cin >> order.name;
 
-		cout << "Enter product count: " << endl;
+		cout << "Enter the amount of product: " << endl;
 		cin >> order.amount;
 
 		cout << "Enter product price: " << endl;
@@ -48,8 +50,7 @@ void createBinaryFile() {
 	fout.close();
 }
 
-void readDataInBinaryFile()
-{
+void readDataInBinaryFile(){
 	ifstream fin(filename, ios::binary);
 
 	cout << "The content of binary file: " << endl;
@@ -57,7 +58,7 @@ void readDataInBinaryFile()
 	for(int i = 0; i < numOfOrders; i++){
 		Order order;
 		fin.read((char*)&order, sizeof(Order));
-		cout << order.n << " " << order.name << " " << order.amount << " " << order.price << " " << endl;
+		cout << order.toString() << endl;
 	}
 
 	fin.close();
@@ -121,35 +122,49 @@ DWORD WINAPI client(LPVOID data) {
 	sa.bInheritHandle = TRUE;
 
 	if (!CreatePipe(&readPipe, &clientWritePipe, &sa, 0)) {
-		cout << "Create pipe failed.\n";
+		cout << "Pipe is not created." << endl;
+
+		CloseHandle(readPipe);
+		CloseHandle(clientWritePipe);
+
 		system("pause");
-		return 0;
+		exit(0);
 	}
 
 	if (!CreatePipe(&clientReadPipe, &writePipe, &sa, 0)) {
-		cout << "Create pipe failed.\n";
+		cout << "Pipe is not created." << endl;
+
+		CloseHandle(readPipe);
+		CloseHandle(clientWritePipe);
+		CloseHandle(writePipe);
+		CloseHandle(clientReadPipe);
+
 		system("pause");
-		return 0;
+		exit(0);
 	}
 
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
-	/*char dataForClient[200] = "Client ";
-	strcat(dataForClient, (const char*)clientWritePipe);
-	strcat(dataForClient, " ");
-	strcat(dataForClient, (const char*)clientReadPipe);
-	*/
-	char clientCommandLine[200];
-	sprintf(clientCommandLine, "Client %d %d", (int)clientWritePipe, (int)clientReadPipe);
+
+	string client = "Client " + to_string((int)clientWritePipe) + " " + to_string((int)clientReadPipe);
+	char* clientCommandLine = new char[client.length() + 1];
+	strcpy(clientCommandLine, client.c_str());
 
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
 	if (!CreateProcess(NULL, clientCommandLine, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
 		cout << "The client process is not created. Error code : " << GetLastError() << endl;
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		CloseHandle(readPipe);
+		CloseHandle(clientWritePipe);
+		CloseHandle(writePipe);
+		CloseHandle(clientReadPipe);
 
-		return 0;
+		system("pause");
+		exit(0);
 	}
 
 	while (true) {
@@ -159,7 +174,7 @@ DWORD WINAPI client(LPVOID data) {
 		char inputCommand;
 		ReadFile(readPipe, &inputCommand, sizeof(inputCommand), &readBytes, NULL);
 
-		if (inputCommand == READ) {
+		if (inputCommand == TO_READ) {
 			EnterCriticalSection(&cs);
 			++readerCount;
 			if (readerCount == 1) {
@@ -189,7 +204,7 @@ DWORD WINAPI client(LPVOID data) {
 			}
 			LeaveCriticalSection(&cs);
 		}
-		else if (inputCommand == MODIFY) {
+		else if (inputCommand == TO_MODIFY) {
 			WaitForSingleObject(semaphore, INFINITE);
 
 			Order order;
@@ -205,37 +220,45 @@ DWORD WINAPI client(LPVOID data) {
 			break;
 		}
 	}
+
+	CloseHandle(readPipe);
+	CloseHandle(clientWritePipe);
+	CloseHandle(writePipe);
+	CloseHandle(clientReadPipe);
 	return 0;
 }
 
 
 
 
-void main() {
+int main() {
+	int numOfClients;
 	InitializeCriticalSection(&cs);
 	semaphore = CreateSemaphore(NULL, 1, 1, NULL);
 
-	cout << "Enter file order name:\n";
+	cout << "Enter file order name: " << endl;;
 	cin >> filename;
 
 	createBinaryFile();
 	readDataInBinaryFile();
 
-	cout << "Enter client count:\n";
-	int clientCount;
-	cin >> clientCount;
-	HANDLE* handles = new HANDLE[clientCount];
-	DWORD* ID = new DWORD[clientCount];
-	for (int i = 0; i < clientCount; i++) {
+	cout << "Enter the amount of clients: " << endl;;
+	cin >> numOfClients;
+
+	HANDLE* handles = new HANDLE[numOfClients];
+	DWORD* ID = new DWORD[numOfClients];
+
+	for (int i = 0; i < numOfClients; i++) {
 		handles[i] = CreateThread(NULL, NULL, client, (void*)i, 0, &ID[i]);
 	}
 
-	WaitForMultipleObjects(clientCount, handles, TRUE, INFINITE);
+	WaitForMultipleObjects(numOfClients, handles, TRUE, INFINITE);
 	readDataInBinaryFile();
 
-	for (int i = 0; i < clientCount; i++) {
+	for (int i = 0; i < numOfClients; i++) {
 		CloseHandle(handles[i]);
 	}
 
 	system("pause");
+	return 0;
 }
