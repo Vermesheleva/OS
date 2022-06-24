@@ -1,5 +1,6 @@
 #include <string>
-using namespace std;
+using std::to_string;
+using std::string;
 
 struct Order {
 	int n;
