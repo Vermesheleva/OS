@@ -84,7 +84,7 @@ double calculateResult(int* param1, int* param2) {
 
 	if ((double)param2[0] == 0) {
 		cout << "The denomerator is 0." << endl;
-		//äëÿ òåñòîâ
+		//Ã¤Ã«Ã¿ Ã²Ã¥Ã±Ã²Ã®Ã¢
 		return INFINITY;
 	}
 
