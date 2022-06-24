@@ -2,16 +2,14 @@
 #include <conio.h>
 #include <iostream>
 #include "Order.cpp"
+#include "Keys.h"
 
-using namespace std;
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ios;
 
-char READ = 'r';
-char MODIFY = 'm';
-char ORDER_NOT_FOUND = 'n';
-char ORDER_FOUND = 'f';
-char EXIT = 'e';
-char END_OPERATION = 'd';
-char END_MODIFY = 'n';
+
 
 
 int main(int argc, char* argv[]) {
@@ -34,7 +32,7 @@ int main(int argc, char* argv[]) {
 			cout << "Enter the number of order to find: " << endl;
 			cin >> numOfOrder;
 
-			WriteFile(writePipe, &READ, sizeof(READ), &bytesWrite, NULL);
+			WriteFile(writePipe, &TO_READ, sizeof(TO_READ), &bytesWrite, NULL);
 			WriteFile(writePipe, &numOfOrder, sizeof(numOfOrder), &bytesWrite, NULL);
 
 			char serverAnswer;
@@ -45,7 +43,7 @@ int main(int argc, char* argv[]) {
 
 				ReadFile(readPipe, &order, sizeof(order), &bytesRead, NULL);
 
-				cout <<  order.name << " " << order.amount << " " << order.price << endl;
+				cout <<  order.toString() << endl;
 			}
 			else {
 				cout << "Your order is not found." << endl;
@@ -60,7 +58,7 @@ int main(int argc, char* argv[]) {
 			cout << "Enter the number of order to modify: " << endl;
 			cin >> numOfOrder;
 
-			WriteFile(writePipe, &READ, sizeof(READ), &bytesWrite, NULL);
+			WriteFile(writePipe, &TO_READ, sizeof(TO_READ), &bytesWrite, NULL);
 
 			WriteFile(writePipe, &numOfOrder, sizeof(numOfOrder), &bytesWrite, NULL);
 
@@ -74,7 +72,7 @@ int main(int argc, char* argv[]) {
 
 				WriteFile(writePipe, &END_OPERATION, sizeof(END_OPERATION), &bytesWrite, NULL);
 
-				cout <<  order.name << " " << order.amount << " " << order.price << endl << endl;
+				cout <<  order.toString() << endl;
 
 				cout << "Enter new order name: " << endl;
 				cin >> order.name;
@@ -85,7 +83,7 @@ int main(int argc, char* argv[]) {
 				cout << "Enter new product price: " << endl;
 				cin >> order.price;
 
-				WriteFile(writePipe, &MODIFY, sizeof(MODIFY), &bytesWrite, NULL);
+				WriteFile(writePipe, &TO_MODIFY, sizeof(TO_MODIFY), &bytesWrite, NULL);
 
 				WriteFile(writePipe, &order, sizeof(order), &bytesWrite, NULL);
 			}

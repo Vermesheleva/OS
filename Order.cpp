@@ -8,11 +8,11 @@ struct Order {
 	double price;
 
 	string toString() {
-		string res = this->n + " ";
-		res.append(this->name);
-		res += " " + this->amount;
+		string res = to_string(this->n) + " ";
+		res += this->name;
+		res += " " + to_string(this->amount);
 		res += " ";
-        res += this->price;
+        res += to_string(this->price);
 
 		return res;
 	}
